@@ -23,16 +23,15 @@ function Kpi({
 }) {
   return (
     <FadeIn delay={delay}>
-      <GlassCard className="relative overflow-hidden p-5">
-        <div className={`absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-20 blur-xl ${tone}`} aria-hidden="true" />
+      <GlassCard className="p-5">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium uppercase tracking-wide text-ink-soft">{label}</span>
-          <span className={`grid h-8 w-8 place-items-center rounded-lg text-white ${tone}`}>
+          <span className="text-xs font-semibold uppercase tracking-wider text-ink-faint">{label}</span>
+          <span className={`grid h-8 w-8 place-items-center rounded-md text-white ${tone}`}>
             <Icon className="h-4 w-4" aria-hidden="true" />
           </span>
         </div>
         <div className="mt-3 flex items-baseline gap-1">
-          <span className="tabular text-3xl font-bold text-ink">
+          <span className="tabular text-3xl font-semibold tracking-tight text-ink">
             <CountUp value={value} decimals={decimals} />
           </span>
           {suffix && <span className="text-lg font-semibold text-ink-soft">{suffix}</span>}
@@ -60,12 +59,9 @@ export function CommandCenter({ data }: { data: ExportData }) {
               <span className="tabular">{manifest.duration_s.toFixed(0)}s</span>
             </p>
           </div>
-          <span className="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-medium text-teal-700 ring-1 ring-teal-600/20">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-teal-500" />
-            </span>
-            snapshot published
+          <span className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-1 text-xs font-medium text-ink-soft">
+            <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+            Snapshot published
           </span>
         </div>
       </FadeIn>

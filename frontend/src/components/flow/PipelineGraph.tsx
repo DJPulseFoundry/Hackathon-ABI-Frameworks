@@ -12,15 +12,15 @@ type StageNodeData = { label: string; sub: string; tone: "teal" | "amber" | "acc
 function StageNode({ data }: NodeProps) {
   const d = data as StageNodeData;
   const tones: Record<StageNodeData["tone"], string> = {
-    teal: "from-teal-500 to-cyan-500 text-white",
-    amber: "from-amber-400 to-amber-500 text-white",
-    accept: "from-teal-600 to-emerald-500 text-white",
-    flag: "from-amber-400 to-orange-400 text-white",
-    reject: "from-rose-500 to-rose-600 text-white",
-    slate: "from-slate-500 to-slate-600 text-white",
+    teal: "bg-teal-600 text-white",
+    amber: "bg-amber-500 text-white",
+    accept: "bg-teal-600 text-white",
+    flag: "bg-amber-500 text-white",
+    reject: "bg-reject text-white",
+    slate: "bg-ink text-white",
   };
   return (
-    <div className={`rounded-xl bg-gradient-to-br ${tones[d.tone]} px-3.5 py-2.5 shadow-lg ring-1 ring-white/40`}>
+    <div className={`rounded-lg ${tones[d.tone]} px-3.5 py-2.5 shadow-sm ring-1 ring-black/5`}>
       <Handle type="target" position={Position.Left} className="!h-2 !w-2 !border-0 !bg-white/70" />
       <div className="text-[13px] font-semibold leading-tight">{d.label}</div>
       <div className="tabular mt-0.5 text-[11px] font-medium opacity-90">{d.sub}</div>
@@ -60,14 +60,14 @@ export function PipelineGraph({ manifest }: { manifest: RunManifest }) {
   });
 
   const edges: Edge[] = [
-    baseEdge("e1", "api", "fetch", "#94a3b8"),
-    baseEdge("e2", "fetch", "sniff", "#f59e0b"),
-    baseEdge("e3", "sniff", "extract", "#14b8a6"),
-    baseEdge("e4", "extract", "db", "#14b8a6"),
-    baseEdge("e5", "db", "route", "#0d9488"),
-    baseEdge("e6", "route", "accept", "#0d9488"),
-    baseEdge("e7", "route", "flag", "#d97706"),
-    baseEdge("e8", "route", "reject", "#e11d48"),
+    baseEdge("e1", "api", "fetch", "#9b99a3"),
+    baseEdge("e2", "fetch", "sniff", "#c2790b"),
+    baseEdge("e3", "sniff", "extract", "#1f835f"),
+    baseEdge("e4", "extract", "db", "#1f835f"),
+    baseEdge("e5", "db", "route", "#137551"),
+    baseEdge("e6", "route", "accept", "#137551"),
+    baseEdge("e7", "route", "flag", "#b06a10"),
+    baseEdge("e8", "route", "reject", "#b3341f"),
   ];
 
   return (
@@ -87,7 +87,7 @@ export function PipelineGraph({ manifest }: { manifest: RunManifest }) {
         zoomOnPinch={false}
         preventScrolling={false}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(13,148,136,0.12)" />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="rgba(26,26,31,0.08)" />
       </ReactFlow>
     </div>
   );

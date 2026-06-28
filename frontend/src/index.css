@@ -1,45 +1,57 @@
 @import "tailwindcss";
 
 /* ============================================================
-   woundpipe theme — white base + teal, glassmorphism, gradients
-   All design tokens live here (Tailwind v4 @theme). No hardcoded
-   hex in components — extend a token instead.
+   woundpipe — refined "clinical instrument" theme.
+   Warm-paper canvas, solid surfaces, hairline borders, near-black
+   ink as the brand/primary, restrained semantic color for status.
+   No glassmorphism, no aurora gradients, no glow. Tokens only —
+   never hardcode hex in components; extend a token instead.
    ============================================================ */
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Menlo", monospace;
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", "Menlo", monospace;
 
-  /* teal / cyan / emerald accent ramp */
-  --color-teal-50: #f0fdfa;
-  --color-teal-100: #ccfbf1;
-  --color-teal-200: #99f6e4;
-  --color-teal-300: #5eead4;
-  --color-teal-400: #2dd4bf;
-  --color-teal-500: #14b8a6;
-  --color-teal-600: #0d9488;
-  --color-teal-700: #0f766e;
-  --color-teal-800: #115e59;
-  --color-teal-900: #134e4a;
+  /* --- neutral ink scale (also the brand / primary action color) --- */
+  --color-ink: #1a1a1f;        /* primary text + brand */
+  --color-ink-soft: #56555e;   /* secondary text */
+  --color-ink-faint: #908f99;  /* tertiary / placeholder */
+  --color-brand: #1a1a1f;
 
-  --color-cyan-400: #22d3ee;
-  --color-cyan-500: #06b6d4;
-  --color-emerald-400: #34d399;
-  --color-emerald-500: #10b981;
+  /* --- warm-neutral surfaces --- */
+  --color-canvas: #f5f4f1;     /* page */
+  --color-surface: #ffffff;    /* cards */
+  --color-surface-2: #faf9f6;  /* alt / inset */
+  --color-border: #e6e4dd;     /* hairline */
+  --color-border-strong: #d8d5cc;
 
-  /* surfaces */
-  --color-ink: #0f172a;       /* slate-900 text on white */
-  --color-ink-soft: #475569;  /* slate-600 secondary text */
-  --color-ink-faint: #94a3b8; /* slate-400 */
-  --color-canvas: #f6fafb;    /* off-white page */
+  /* --- "teal" ramp retuned to a muted, professional emerald so any
+         remaining teal class reads as a refined, billable green --- */
+  --color-teal-50: #edf5f0;
+  --color-teal-100: #d7eadf;
+  --color-teal-200: #b0d6c3;
+  --color-teal-300: #7cbb9f;
+  --color-teal-400: #469a78;
+  --color-teal-500: #1f835f;
+  --color-teal-600: #137551;
+  --color-teal-700: #0f6244;
+  --color-teal-800: #0d4f38;
+  --color-teal-900: #0c4030;
 
-  /* semantic routing colors (paired with icons, never color-only) */
-  --color-accept: #0d9488;
-  --color-flag: #d97706;
-  --color-reject: #e11d48;
+  /* cyan / emerald folded into the same green family (kills neon gradients) */
+  --color-cyan-400: #2f9772;
+  --color-cyan-500: #1f835f;
+  --color-emerald-400: #3a9a76;
+  --color-emerald-500: #1f835f;
 
-  --radius-glass: 1.25rem;
-  --shadow-glass: 0 8px 32px -8px rgb(13 148 136 / 0.18), 0 2px 8px -4px rgb(15 23 42 / 0.08);
-  --shadow-glass-lg: 0 20px 60px -16px rgb(13 148 136 / 0.28), 0 4px 16px -8px rgb(15 23 42 / 0.12);
+  /* --- semantic status (muted, sit calmly on warm paper) --- */
+  --color-accept: #137551;     /* ready to bill / approved / strong */
+  --color-flag: #b06a10;       /* needs review / moderate */
+  --color-reject: #b3341f;     /* not billable / weak */
+
+  --radius-glass: 0.75rem;     /* legacy name → tightened card radius */
+  --radius-card: 0.75rem;
+  --shadow-glass: 0 1px 2px rgb(20 20 31 / 0.04), 0 1px 3px rgb(20 20 31 / 0.05);
+  --shadow-glass-lg: 0 1px 2px rgb(20 20 31 / 0.05), 0 12px 28px -10px rgb(20 20 31 / 0.14);
 }
 
 @layer base {
@@ -49,54 +61,53 @@
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
     background-color: var(--color-canvas);
-    /* layered teal aurora on a white base */
-    background-image:
-      radial-gradient(60rem 40rem at 12% -8%, rgb(45 212 191 / 0.16), transparent 60%),
-      radial-gradient(50rem 36rem at 100% 0%, rgb(6 182 212 / 0.14), transparent 55%),
-      radial-gradient(48rem 40rem at 50% 120%, rgb(16 185 129 / 0.10), transparent 60%);
+    /* faint precision grid — atmosphere without slop */
+    background-image: radial-gradient(rgb(26 26 31 / 0.022) 1px, transparent 1px);
+    background-size: 22px 22px;
     background-attachment: fixed;
     min-height: 100vh;
   }
   :focus-visible {
-    outline: 2px solid var(--color-teal-600);
+    outline: 2px solid var(--color-ink);
     outline-offset: 2px;
-    border-radius: 6px;
+    border-radius: 5px;
   }
+  ::selection { background: rgb(19 117 81 / 0.16); }
   /* numerics read as data-grade precision */
   .tabular { font-family: var(--font-mono); font-feature-settings: "tnum" 1; letter-spacing: -0.01em; }
 }
 
 @layer components {
+  /* Solid card surfaces. The .glass / .glass-strong names are kept so the
+     existing GlassCard component picks up the refined look automatically. */
   .glass {
-    background: linear-gradient(135deg, rgb(255 255 255 / 0.72), rgb(255 255 255 / 0.52));
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    border: 1px solid rgb(255 255 255 / 0.6);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
     box-shadow: var(--shadow-glass);
-    border-radius: var(--radius-glass);
   }
   .glass-strong {
-    background: linear-gradient(135deg, rgb(255 255 255 / 0.9), rgb(240 253 250 / 0.78));
-    backdrop-filter: blur(22px) saturate(150%);
-    -webkit-backdrop-filter: blur(22px) saturate(150%);
-    border: 1px solid rgb(255 255 255 / 0.7);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
     box-shadow: var(--shadow-glass-lg);
-    border-radius: var(--radius-glass);
   }
+  /* Headings are solid ink now, with tight optical tracking. */
   .gradient-text {
-    background: linear-gradient(100deg, var(--color-teal-700), var(--color-teal-500) 45%, var(--color-cyan-500));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--color-ink);
+    letter-spacing: -0.025em;
   }
+  /* "gradient-teal" surfaces (brand tile, active tab, primary buttons)
+     become a single confident ink fill. */
   .gradient-teal {
-    background: linear-gradient(120deg, var(--color-teal-600), var(--color-teal-400) 55%, var(--color-cyan-400));
+    background: var(--color-ink);
   }
-  .ring-glass { box-shadow: inset 0 0 0 1px rgb(13 148 136 / 0.12); }
+  .ring-glass { box-shadow: inset 0 0 0 1px var(--color-border); }
 }
 
-/* React Flow surface should blend with the glass canvas */
+/* React Flow surface blends with the canvas */
 .react-flow__attribution { display: none; }
 .react-flow__edge-path { stroke-linecap: round; }
 

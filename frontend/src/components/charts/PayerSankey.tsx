@@ -35,16 +35,15 @@ export function PayerSankey({ edges }: { edges: SankeyEdge[] }) {
       >
         <defs>
           <linearGradient id="sankeyGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="#14b8a6" />
-            <stop offset="100%" stopColor="#22d3ee" />
+            <stop offset="0%" stopColor="#137551" />
+            <stop offset="100%" stopColor="#2f9772" />
           </linearGradient>
         </defs>
         <Tooltip
           contentStyle={{
-            borderRadius: 12,
-            border: "1px solid rgba(13,148,136,0.2)",
-            background: "rgba(255,255,255,0.92)",
-            backdropFilter: "blur(8px)",
+            borderRadius: 8,
+            border: "1px solid #e6e4dd",
+            background: "#ffffff",
             fontSize: 12,
           }}
         />
@@ -66,7 +65,7 @@ function SankeyNode({ x = 0, y = 0, width = 0, height = 0, index = 0, payload, c
   const isRight = x + width + 140 > containerWidth;
   return (
     <Layer key={`node-${index}`}>
-      <Rectangle x={x} y={y} width={width} height={height} fill="#0d9488" fillOpacity={0.95} radius={3} />
+      <Rectangle x={x} y={y} width={width} height={height} fill="#137551" fillOpacity={0.95} radius={2} />
       <text
         x={isRight ? x - 8 : x + width + 8}
         y={y + height / 2}
@@ -74,7 +73,7 @@ function SankeyNode({ x = 0, y = 0, width = 0, height = 0, index = 0, payload, c
         dominantBaseline="middle"
         fontSize={12}
         fontWeight={600}
-        fill="#0f172a"
+        fill="#1a1a1f"
       >
         {payload?.name}
       </text>

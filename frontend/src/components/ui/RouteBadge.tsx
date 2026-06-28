@@ -8,7 +8,7 @@ export function RouteBadge({ route, size = "md" }: { route: Route; size?: "sm" |
   const pad = size === "sm" ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs";
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-medium ring-1 ${m.bg} ${m.text} ${m.ring} ${pad}`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md font-semibold ring-1 ${m.bg} ${m.text} ${m.ring} ${pad}`}
     >
       <Icon className={size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"} aria-hidden="true" />
       {m.label}

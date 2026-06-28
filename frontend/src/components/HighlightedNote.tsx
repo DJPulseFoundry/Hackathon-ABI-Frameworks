@@ -7,6 +7,7 @@ import type { Highlight } from "../types";
 const FIELD_TONE: Record<string, string> = {
   type: "bg-teal-100 text-teal-800 ring-teal-500/30",
   location: "bg-cyan-100 text-cyan-800 ring-cyan-500/30",
+  measure: "bg-emerald-100 text-emerald-800 ring-emerald-500/30",
   measurements: "bg-emerald-100 text-emerald-800 ring-emerald-500/30",
   stage: "bg-amber-100 text-amber-800 ring-amber-500/30",
   drainage: "bg-sky-100 text-sky-800 ring-sky-500/30",
@@ -15,7 +16,8 @@ const FIELD_TONE: Record<string, string> = {
 const FIELD_LABEL: Record<string, string> = {
   type: "Wound type",
   location: "Location",
-  measurements: "Measurement",
+  measure: "Size",
+  measurements: "Size",
   stage: "Stage",
   drainage: "Drainage",
   secondary_wound: "2nd wound",

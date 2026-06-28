@@ -1,5 +1,23 @@
 import { useEffect, useState } from "react";
-import type { ExportData } from "../types";
+import type { ExportData, Patient, Payer } from "../types";
+import { payerName } from "../lib/route";
+
+// The export contract says payer is an object, but some runs emit just the code
+// string ("MCB"). Normalize both shapes to a full Payer so the whole UI can rely
+// on payer.code / payer.name without rendering "undefined".
+function normalizePayer(raw: Payer | string): Payer {
+  if (typeof raw === "string") {
+    return { code: raw, name: payerName(raw), type: raw.startsWith("MC") ? "Medicare" : "Commercial" };
+  }
+  return { ...raw, name: raw.name ?? payerName(raw.code) };
+}
+
+function normalize(data: ExportData): ExportData {
+  return {
+    ...data,
+    patients: data.patients.map((p): Patient => ({ ...p, payer: normalizePayer(p.payer as Payer | string) })),
+  };
+}
 
 type State =
   | { status: "loading"; data: null; error: null }
@@ -22,12 +40,12 @@ export function useExport(reloadKey = 0): State & { reload: () => void } {
         if (!r.ok) throw new Error(`Could not load run data (HTTP ${r.status}).`);
         return (await r.json()) as ExportData;
       })
-      .then((data) => {
+      .then((raw) => {
         if (!alive) return; // ignore out-of-order / stale response
-        if (!data?.patients || data.patients.length === 0) {
-          setState({ status: "empty", data, error: null });
+        if (!raw?.patients || raw.patients.length === 0) {
+          setState({ status: "empty", data: raw, error: null });
         } else {
-          setState({ status: "ready", data, error: null });
+          setState({ status: "ready", data: normalize(raw), error: null });
         }
       })
       .catch((e: unknown) => {

@@ -59,7 +59,7 @@ export function Skeleton({ className = "" }: { className?: string }) {
 export function EmptyState({ title, hint }: { title: string; hint: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center" role="status">
-      <div className="gradient-teal grid h-14 w-14 place-items-center rounded-2xl text-white shadow-lg">
+      <div className="grid h-14 w-14 place-items-center rounded-xl border border-border bg-surface-2 text-ink-soft">
         <Inbox className="h-7 w-7" aria-hidden="true" />
       </div>
       <h3 className="text-lg font-semibold text-ink">{title}</h3>
@@ -81,7 +81,7 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry: () 
       </p>
       <button
         onClick={onRetry}
-        className="mt-1 inline-flex items-center gap-2 rounded-full bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-teal-700 focus-visible:outline-2"
+        className="mt-1 inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-ink/90 focus-visible:outline-2"
       >
         <RefreshCw className="h-4 w-4" aria-hidden="true" /> Retry
       </button>

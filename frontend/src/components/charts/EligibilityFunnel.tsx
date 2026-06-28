@@ -4,21 +4,20 @@ import type { Funnel as FunnelData } from "../../types";
 // 300 → MCB active → active wound → has measurements → auto-accept.
 export function EligibilityFunnel({ funnel }: { funnel: FunnelData }) {
   const data = [
-    { stage: "Patients fetched", value: funnel.total, fill: "#0f766e" },
-    { stage: "MCB active", value: funnel.mcb_active, fill: "#0d9488" },
-    { stage: "Active wound dx", value: funnel.active_wound, fill: "#14b8a6" },
-    { stage: "Has L×W×D", value: funnel.has_measurements, fill: "#2dd4bf" },
-    { stage: "Auto-accept", value: funnel.auto_accept, fill: "#5eead4" },
+    { stage: "Patients fetched", value: funnel.total, fill: "#0f6244" },
+    { stage: "MCB active", value: funnel.mcb_active, fill: "#137551" },
+    { stage: "Active wound dx", value: funnel.active_wound, fill: "#1f835f" },
+    { stage: "Has L×W×D", value: funnel.has_measurements, fill: "#469a78" },
+    { stage: "Auto-accept", value: funnel.auto_accept, fill: "#7cbb9f" },
   ];
   return (
     <ResponsiveContainer width="100%" height={300}>
       <FunnelChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
         <Tooltip
           contentStyle={{
-            borderRadius: 12,
-            border: "1px solid rgba(13,148,136,0.2)",
-            background: "rgba(255,255,255,0.92)",
-            backdropFilter: "blur(8px)",
+            borderRadius: 8,
+            border: "1px solid #e6e4dd",
+            background: "#ffffff",
             fontSize: 12,
           }}
           formatter={(v: number) => [v.toLocaleString(), "patients"]}
@@ -28,7 +27,7 @@ export function EligibilityFunnel({ funnel }: { funnel: FunnelData }) {
           <LabelList
             position="left"
             dataKey="value"
-            fill="#0f766e"
+            fill="#0f6244"
             stroke="none"
             fontSize={13}
             fontWeight={700}
