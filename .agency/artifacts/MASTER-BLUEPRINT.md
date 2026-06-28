@@ -82,6 +82,45 @@ Full DDL in `artifacts/research-schema/report.md` (already run & verified). High
 
 ---
 
+## 4b. Graph relations — the corroboration graph (data + visual)
+The raw PCC data is a **tree** (facility → patient → dx/coverage/notes/assessments) — relational, not a graph DB problem (no Neo4j). But one genuinely graph-shaped structure **emerges from the question "do the sources agree?"**, and it IS the confidence backbone. We model it as a derived SQL view over SQLite and visualize it — no new datastore.
+
+**Three graph relations present (only ② is worth exploiting):**
+- **① Entity-resolution "same-as" edge** — `patient_id` (FA-001) ≡ `id` (1); same person, two keys. Already first-class in the schema (the two-identity map).
+- **② Corroboration graph (the valuable one)** — per patient, the evidence sources {active ICD-10 dx, note, assessment} are nodes that each point to a **wound node**; edges are weighted **agree / conflict**. All agree → `auto_accept`; a conflict edge (note says "hip", dx says "heel") → `flag_for_review`. This is exactly how routing decides — a small bipartite agreement graph.
+- **③ ICD-10 / wound-type taxonomy (hierarchy)** — `L89.143` is a leaf under the `L89` pressure-ulcer family; this static reference tree is what lets a note's "Stage 3 PU, right hip" *match* the right code during corroboration. Used for matching, not stored as a graph.
+
+**Derived view (sketch — build refines):** one row per (patient, evidence-source) with per-attribute agreement vs. the primary wound, so the frontend can draw the graph straight from SQL.
+```sql
+CREATE VIEW v_wound_corroboration AS
+WITH primary_wound AS (
+  SELECT patient_id, wound_type, stage, location, overall_conf
+  FROM wound_extraction WHERE is_primary = 1
+  GROUP BY patient_id HAVING overall_conf = MAX(overall_conf))
+SELECT w.patient_id,
+       w.source_kind                              AS evidence_node,   -- 'diagnosis' | 'note' | 'assessment'
+       w.source_note_id, w.source_assessment_id,
+       (w.wound_type = p.wound_type)              AS type_agrees,
+       (w.location   = p.location)                AS location_agrees,
+       (w.stage IS p.stage)                       AS stage_agrees,     -- IS = null-safe
+       (w.wound_type = p.wound_type AND w.location = p.location)
+                                                  AS corroborates      -- the edge color: 1=green, 0=red
+FROM wound_extraction w JOIN primary_wound p USING (patient_id);
+```
+A companion scalar (`COUNT(*) FILTER (WHERE corroborates)` per patient = number of agreeing sources) is one input to `overall_conf` — closing the loop between the graph and the routing threshold.
+
+**Patient-detail evidence-graph visual** (same React Flow lib as the pipeline view — near-free):
+```
+   📋 Diagnosis L89.143 ──agree✓──┐
+   📝 Note (Envive)     ──agree✓──┼──▶  [ 🩹 WOUND: Right hip · Stage 3 · PU ]   confidence ●●●○○ → flag
+   📊 Assessment        ──conflict✗─┘                                            (1 source disagrees)
+```
+Nodes: 3 evidence sources + 1 wound. Edges glow **green on agreement, red on conflict**. This turns the abstract "cross-source agreement: high" into something a biller *sees and trusts at a glance* — explainability theater as a network diagram.
+
+**Scope boundary (deliberate):** no graph database; no full ICD-10 ontology/knowledge-graph layer (the roster has `ontology-engineer` + `knowledge-graph-engineer` if we ever go there — over-engineering for this MVP). The corroboration graph lives as a SQL view + a per-patient visual. **Cut-line:** the view is cheap and worth shipping; the animated evidence-graph visual is a ⭐ stretch alongside the animated pipeline view.
+
+---
+
 ## 5. Frontend — React command-center (LOCKED: React)
 Static SPA (`vite build`) reading an **exported JSON** snapshot from SQLite → zero backend to crash live. Optional thin FastAPI read endpoint as a *bonus*, never a dependency.
 
