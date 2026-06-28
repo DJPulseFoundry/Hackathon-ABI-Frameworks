@@ -1,24 +1,26 @@
 # Status Board (live kanban)
 
-> Owned by chief-of-staff (sole writer). Every agent **reports** its status; chief-of-staff moves the cards during RECONCILE.
+> Owned by chief-of-staff (sole writer). Reconciled by CEO at cycle close.
 
 ## Backlog
-- T8 DESIGN — clickable north-star dashboard prototype via /SDLC-design (optional, recommended before build)
-- T9 BUILD — scaffold → ingest+resolve → normalize → extract → route → publish → frontend (per MASTER-BLUEPRINT §8)
-- Gold-set construction (60–100 stratified patients, 2 annotators + κ) — owner: build/eval engineer
+- DESIGN — clickable dashboard north-star via /SDLC-design (optional, recommended before/with build)
+- BUILD — implement per SPEC.md §E (next cycle; grab context7 augment at build, needs restart)
+- Gold-set construction (60–100 stratified patients + κ) — owner: build/eval
+- CI gate: SQL VIEW ↔ Python route() oracle equality test (R5); make verify-restore (R3)
 
 ## In progress
-- (none — Cycle 1 research complete)
+- (none — Cycle 2 spec complete)
 
 ## Blocked
 - (none)
 
-## Done — Cycle 1 (research)
-- T0 PREFLIGHT + grounding · CEO · artifacts/grounding/api-reality.md
-- T1 Extraction engine (3-lane hybrid + span-gate + confidence) · technical-researcher · artifacts/research-extraction/report.md
-- T2 Routing logic + eval (selective classification, Chow, no-gold-label plan) · academic-researcher · artifacts/research-routing/report.md
-- T3 SQLite schema + migrations (EXECUTION-VERIFIED on 3.51) · database-engineer · artifacts/research-schema/report.md
-- T4 Pipeline architecture + build plan · Plan/architect · artifacts/research-architecture/report.md
-- T5 Beast frontend + dataviz · design-researcher · artifacts/research-frontend/report.md
-- T6 MVP/domain framing (persona, problem stats, roadmap) · market-researcher · artifacts/research-mvp/report.md
-- T7 SYNTHESIS → master blueprint · CEO · artifacts/MASTER-BLUEPRINT.md
+## Done — Cycle 2 (spec doc)
+- S1 Architecture & interfaces · architect · artifacts/spec-architecture/report.md
+- S2 Ingestion & runtime · software-eng · artifacts/spec-ingestion/report.md
+- S3 Extraction algorithm (regex validated, 0 misses) · algo-eng · artifacts/spec-extraction/report.md
+- S4 Routing/confidence/corroboration · algo-eng · artifacts/spec-routing/report.md
+- S5 Data layer & schema (DDL verified) · database-engineer · artifacts/spec-data/report.md
+- S6 SYNTHESIS + reconciliation ledger · CEO · artifacts/SPEC.md
+
+## Done — Cycle 1 (research) + blueprint
+- T0–T7 research fleet + MASTER-BLUEPRINT.md (+ §4b graph relations)
