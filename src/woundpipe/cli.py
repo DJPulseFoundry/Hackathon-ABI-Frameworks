@@ -98,24 +98,62 @@ def ingest(db: str = typer.Option("data/woundpipe.db", "--db"),
 
     con = connect(db)
     done = checkpoint.count_done(con)
+    failed = checkpoint.count_failed(con)
+    incomplete_patients = checkpoint.failed_fanout_patients(con)
     manifest.persist(con, s.runs_dir)
     con.commit(); con.close()
     typer.secho(
         f"[ingest] done · run={run_id} · tasks_done={done} · calls={manifest.calls_total} "
         f"· 429s={manifest.calls_429} · retries={manifest.retries}", fg="green")
+    if failed:
+        typer.secho(
+            f"[ingest] WARNING: {failed} fetch(es) failed across {incomplete_patients} patient(s) — "
+            f"their charts are INCOMPLETE and will be flagged, never auto-accepted. "
+            f"Run `woundpipe requeue-failed --db {db}` to retry.", fg="yellow")
+
+
+@app.command(name="requeue-failed")
+def requeue_failed(db: str = typer.Option("data/woundpipe.db", "--db")):
+    """Re-drive every failed fetch task (dead-letter drain), then re-fetch them."""
+    from woundpipe.db.engine import connect
+    from woundpipe.ingest import checkpoint, fetch
+    from woundpipe.observability.manifest import RunManifest
+
+    s = _settings(db)
+    con = connect(db)
+    n = checkpoint.requeue_failed(con)
+    con.commit(); con.close()
+    if not n:
+        typer.secho("[requeue-failed] no failed tasks — nothing to do.", fg="green")
+        return
+    typer.echo(f"[requeue-failed] requeued {n} failed task(s); re-fetching …")
+    manifest = RunManifest(run_id=uuid.uuid4().hex[:12])
+    fetch.execute(s, manifest, db_path=db)
+    con = connect(db)
+    still = checkpoint.count_failed(con)
+    con.close()
+    color = "green" if not still else "yellow"
+    typer.secho(f"[requeue-failed] done · remaining_failed={still}", fg=color)
 
 
 @app.command()
-def extract(db: str = typer.Option("data/woundpipe.db", "--db")):
-    """Extract wound fields from notes/assessments into wound_extraction."""
+def extract(db: str = typer.Option("data/woundpipe.db", "--db"),
+            full: bool = typer.Option(False, "--full",
+                                      help="re-extract every patient, ignoring the change watermark")):
+    """Extract wound fields from notes/assessments into wound_extraction.
+
+    Incremental by default: only patients whose source data changed since the
+    last run are re-extracted. Use --full to force a complete rebuild."""
     from woundpipe.db.engine import connect
     from woundpipe.extract import engine
     s = _settings(db)
     con = connect(db)
-    res = engine.extract_all(con, s)
+    res = engine.extract_all(con, s, full=full)
     con.close()
-    typer.secho(f"[extract] patients_with_wounds={res['patients_with_wounds']} "
-                f"by_format={res['by_format']}", fg="green")
+    llm = f" llm={res['llm']}" if res.get("llm") else ""
+    typer.secho(f"[extract] dirty={res['dirty']} skipped={res['skipped']} "
+                f"patients_with_wounds={res['patients_with_wounds']} "
+                f"by_format={res['by_format']}{llm}", fg="green")
 
 
 @app.command()
@@ -152,7 +190,7 @@ def run_all(db: str = typer.Option("data/woundpipe.db", "--db"),
     ingest(db=db, facilities=facilities, since=since, limit=limit)
     extract(db=db)
     route(db=db)
-    publish(db=db)
+    publish(db=db, out="data/export.json", frontend="frontend/public/export.json")
     typer.secho("[run-all] pipeline complete.", fg="green", bold=True)
 
 

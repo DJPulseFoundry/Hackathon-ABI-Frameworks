@@ -285,11 +285,17 @@ def _eligibility_checks(elig: dict[str, Any]) -> list[dict[str, Any]]:
         and elig["depth_cm"] is not None
     )
     agree_ok = bool(elig.get("all_agree")) and (elig.get("n_sources") or 0) >= 2
+    failed_fetches = elig.get("failed_fetches") or 0
     return [
         {
             "label": "Active Medicare Part B",
             "ok": bool(elig["has_active_mcb"]),
             "detail": elig.get("payer_code"),
+        },
+        {
+            "label": "Source data complete",
+            "ok": failed_fetches == 0,
+            "detail": None if failed_fetches == 0 else f"{failed_fetches} fetch(es) failed",
         },
         {"label": "Active wound", "ok": bool(elig["has_active_wound"]), "detail": None},
         {
@@ -329,7 +335,8 @@ def export_json(con: sqlite3.Connection) -> dict[str, Any]:
                    payer_code, wound_type, stage, location,
                    length_cm, width_cm, depth_cm, drainage, confidence,
                    has_active_mcb, has_active_wound, has_active_wound_dx,
-                   n_sources, n_agree, all_agree, n_conflict, route, reason
+                   n_sources, n_agree, all_agree, n_conflict,
+                   failed_fetches, data_complete, route, reason
             FROM v_patient_eligibility
             ORDER BY facility_id, patient_id
             """
@@ -449,6 +456,8 @@ def export_json(con: sqlite3.Connection) -> dict[str, Any]:
                 "payer_code": p.get("payer_code"),
                 "has_active_mcb": bool(p["has_active_mcb"]),
                 "has_active_wound": bool(p["has_active_wound"]),
+                "data_complete": bool(p["data_complete"]),
+                "failed_fetches": p["failed_fetches"],
                 "wound": {
                     "wound_type": p["wound_type"],
                     "stage": p["stage"],

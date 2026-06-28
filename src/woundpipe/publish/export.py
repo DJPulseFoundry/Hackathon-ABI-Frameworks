@@ -90,6 +90,8 @@ def _adapt_patient(p: dict) -> dict:
         "confidence": p.get("confidence") or 0,
         "field_confidence": p.get("field_confidence") or {},
         "reason": p.get("reason", ""),
+        "data_complete": p.get("data_complete", True),
+        "failed_fetches": p.get("failed_fetches", 0),
         "note_text": p.get("note_text") or "",
         "highlights": p.get("highlights") or [],
         "eligibility_checks": checks,

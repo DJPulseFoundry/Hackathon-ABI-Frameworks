@@ -39,6 +39,8 @@ if _HAS_PYDANTIC:
         model_bulk: str = "claude-haiku-4-5-20251001"
         model_escalate: str = "claude-sonnet-4-6"
         llm_timeout_s: float = 20.0
+        llm_concurrency: int = 4                     # bounded parallel Claude calls (Fix 2)
+        llm_max_attempts: int = 5                    # retry budget per LLM call
         # routing
         auto_accept_threshold: float = 0.80         # mirrors config table (calibratable)
         format_conf_min: float = 0.70
@@ -62,6 +64,8 @@ else:
         model_bulk: str = "claude-haiku-4-5-20251001"
         model_escalate: str = "claude-sonnet-4-6"
         llm_timeout_s: float = 20.0
+        llm_concurrency: int = 4                     # bounded parallel Claude calls (Fix 2)
+        llm_max_attempts: int = 5                    # retry budget per LLM call
         auto_accept_threshold: float = 0.80
         format_conf_min: float = 0.70
         measure_tol_cm: float = 0.20

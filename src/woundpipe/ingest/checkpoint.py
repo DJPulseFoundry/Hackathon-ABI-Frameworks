@@ -208,3 +208,30 @@ def count_done(con) -> int:
     return con.execute(
         "SELECT COUNT(*) FROM fetch_log WHERE status='done'"
     ).fetchone()[0]
+
+
+def count_failed(con) -> int:
+    return con.execute(
+        "SELECT COUNT(*) FROM fetch_log WHERE status='failed'"
+    ).fetchone()[0]
+
+
+def failed_fanout_patients(con) -> int:
+    """Distinct patients with at least one FAILED per-patient fan-out task.
+
+    These charts are incomplete: a downstream auto_accept on them would bill on
+    data we could not fully fetch, so routing must flag them (Fix 3b)."""
+    return con.execute(
+        "SELECT COUNT(DISTINCT identity_value) FROM fetch_log "
+        "WHERE status='failed' AND identity_kind IN ('patient_id','id')"
+    ).fetchone()[0]
+
+
+def requeue_failed(con) -> int:
+    """Reset every failed task back to pending so the resilient executor re-drives
+    it (the dead-letter drain). Returns the number of tasks requeued."""
+    cur = con.execute(
+        "UPDATE fetch_log SET status='pending', error=NULL WHERE status='failed'"
+    )
+    con.commit()
+    return cur.rowcount or 0
