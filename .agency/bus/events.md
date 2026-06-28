@@ -1,0 +1,24 @@
+# Event Log (append-only audit trail)
+
+> Append-only audit trail. Agents **report** their events; only the serial owners append here — `chief-of-staff` folds reported events in at RECONCILE, the orchestrator may append routing events at SERVE (those steps never overlap, so there's no race). Never edit past lines. This is how anyone reconstructs what happened.
+
+Format: `<ISO-8601 UTC> | <agent> | <what happened> | <task-id>`
+
+- <init-timestamp> | orchestrator | agency initialized | —
+
+- 2026-06-28 — PREFLIGHT passed: clean tree on main, remote origin present, .agency scaffolded. Live API probed (300 patients, retry-aware). Grounding artifact written (artifacts/grounding/api-reality.md). Reporting=local HTML default. Spawning 6-agent research fleet (cycle 1).
+
+- 2026-06-28 — DECISIONS LOCKED (user): (D1) Extraction = HYBRID (deterministic rules for clean measurements + Claude LLM for Envive/multi-wound prose, per-field confidence). (D2) Frontend = REACT command-center (Vite+Tailwind+shadcn + React Flow/D3 animated data-flow visuals; demo-reliability is a hard constraint). These steer SYNTHESIS + BUILD. Augmentation deferred to build phase.
+
+- 2026-06-28 — CYCLE 1 RESEARCH COMPLETE. All 6 reports persisted by CEO (subagent file-writes were harness-blocked; CEO persisted each per brief/report contract). Architecture report self-wrote (Plan agent). SYNTHESIS done → artifacts/MASTER-BLUEPRINT.md.
+- 2026-06-28 — KEY DECISIONS (for decisions-log): (a) glass-box selective-classification routing over black-box (Rudin; no gold labels to calibrate). (b) regex-first/LLM-layered hybrid extraction with verbatim-span guardrail. (c) SQLite STRICT + VIEW eligibility + partial indexes + FTS5, schema-managed via user_version up/down. (d) React static-SPA reading JSON snapshot (demo-safe). (e) cross-source corroboration (dx⟷note⟷assessment) is the confidence backbone, NOT LLM self-confidence.
+- 2026-06-28 — RISKS (for risk-register): R1 no gold labels ⇒ no certified risk (mitigate: 60–100 stratified gold set + κ). R2 auto_accept 0.80 threshold placeholder (calibrate). R3 restore drill not run on full DB. R4 demo reliability (mitigate: precomputed snapshot + static JSON).
+- 2026-06-28 — BLUEPRINT UPDATE: added §4b "Graph relations — the corroboration graph" (v_wound_corroboration SQL view + per-patient evidence-graph visual; agree=green/conflict=red). Scope: SQL view over SQLite, NO graph DB, NO full ontology layer (deferred). Closes the loop between cross-source agreement and overall_conf routing threshold.
+
+- 2026-06-28 — CYCLE 2 START (spec doc). PREFLIGHT passed: clean tree, 0/0 vs origin/main. AUGMENT ran: registry.json <- 243 live candidates; CEO recommended No for a doc-only cycle (context7 flagged for BUILD, needs restart). Mission: turn MASTER-BLUEPRINT into a buildable engineering SPEC. Staffing architect + 2 algorithmic engineers + software engineer + database engineer (5 parallel).
+
+- 2026-06-28 — CYCLE 2 SPEC COMPLETE. 5 sections delivered + persisted by CEO (subagent writes harness-blocked; Plan/architect read-only): spec-architecture, spec-ingestion, spec-extraction (regex validated vs real samples, 0 misses), spec-routing, spec-data (DDL execution-verified). SYNTHESIS → artifacts/SPEC.md with 9-item RECONCILIATION LEDGER resolving all cross-section deltas.
+- 2026-06-28 — RECONCILED DELTAS (R1–R9): R1 child wound_field_evidence table (per-field spans; raised by architect+extraction independently). R2 merge fetch_log/run_manifest/sync_state runtime tables. R3 widen active_wound to WOUND_FAMILIES via wound_icd_family ref table. R4 auto_accept_tau → config table (calibratable). R5 SQL VIEW = single route execution path, Python route() = reference oracle; confidence math in Python, route decision in SQL. R6 span_verified weight 0.20. R7 corrob_mult {1.00,0.90,0.75}. R8 7 seams (sniff = S3). R9 global no-call-without-timeout rule.
+- 2026-06-28 — Cross-team REQUESTS resolved at SERVE: REQ-D1(routing↔DB threshold/agreement) ✓ aligned. REQ-D2(ingestion↔DB fetch_log) ✓ merged. REQ-D3(architecture↔DB frontend keys) ✓ DB export_json keys authoritative. REQ-D4(sre WAL review) → carried to build.
+
+- 2026-06-28 — CYCLE 3 BUILD COMPLETE. woundpipe MVP implemented end-to-end by the Agency (database/ingestion/frontend engineers + CEO integration; LLM lane fulfilled by CEO/Claude). LIVE RUN against PCC API: 1693 calls, 485 429s survived, 1200/1200 done, 300 patients in 280s → extract (299 patients) → route (15 auto/89 flag/196 reject) → export.json. Frontend (white+teal glass, 4 screens) builds clean against live data. 11 tests pass incl. R5 oracle equality. verify-restore PASSED (R-risk-3 closed). A/B design test done (variant-A Calm Clinical Glass, variant-B Teal Command Deck, COMPARISON rec). Committed to branch build/woundpipe-mvp (NOT pushed/merged — user's call). Typer 0.12→0.26 bump documented (Python 3.14/Click 8.4 incompat). BLOCKERS.md: none open.
