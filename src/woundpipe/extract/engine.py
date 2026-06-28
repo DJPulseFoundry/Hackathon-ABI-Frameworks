@@ -115,7 +115,7 @@ def extract_all(con: sqlite3.Connection, settings: Settings, manifest=None) -> d
             "WHERE patient_id=? AND clinical_status='active'", (pid,)
         ).fetchall():
             if _is_wound_dx(code):
-                dw = _wound_from_text(desc or "")
+                dw = regex_lane.extract_attributes(desc or "")
                 if dw:
                     dx_wounds.append(dw)
 

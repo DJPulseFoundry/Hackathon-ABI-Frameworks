@@ -60,6 +60,38 @@ def collapse_dups(text: str) -> str:
     return re.sub(r"\b(\w+)\s+\1\b", r"\1", text, flags=re.I)
 
 
+_LOOSE_STAGE = re.compile(r"\bStage\s*([1-4])\b|\b(Unstageable)\b|\b(Deep Tissue)", re.I)
+
+
+def extract_attributes(text: str) -> dict | None:
+    """Type / location / stage from text WITHOUT requiring a measurement.
+
+    Used for ICD-10 diagnosis descriptions (e.g. 'Stage 3 Pressure Ulcer – Right hip'),
+    which carry wound identity but no dimensions, so they can still be an evidence node.
+    """
+    if not text:
+        return None
+    out: dict = {}
+    for rx, label in _TYPE_HINTS:
+        if rx.search(text):
+            out["wound_type"] = label
+            break
+    lm = LOC.search(text)
+    if lm:
+        out["location"] = f"{_norm_lat(lm.group('lat'))} {lm.group('site').lower()}"
+    sm = _LOOSE_STAGE.search(text) or STAGE.search(text)
+    if sm:
+        raw = sm.group(0)
+        digit = re.search(r"[1-4]", raw)
+        if digit:
+            out["stage"], out["stage_status"] = digit.group(0), "staged"
+        elif re.search(r"unstageable", raw, re.I):
+            out["stage"], out["stage_status"] = "unstageable", "unstageable"
+        elif re.search(r"deep tissue", raw, re.I):
+            out["stage"], out["stage_status"] = "DTI", "deep_tissue_injury"
+    return out or None
+
+
 def find_wounds(text: str) -> list[dict]:
     """Find every wound (one per DIM match) with fields + evidence spans.
 
