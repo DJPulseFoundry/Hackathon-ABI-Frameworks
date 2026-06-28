@@ -57,41 +57,6 @@ Content-Type: application/json
 
 The `Retry-After` header is a random integer between 1 and 5 (seconds). Implement exponential back-off or simple retry logic on every call.
 
-**Recommended pattern:**
-
-```python
-import time
-import httpx
-
-def get_with_retry(url, params=None, max_retries=5):
-    for attempt in range(max_retries):
-        resp = httpx.get(url, params=params)
-        if resp.status_code == 429:
-            wait = int(resp.headers.get("Retry-After", 2)) * (attempt + 1)
-            time.sleep(wait)
-            continue
-        resp.raise_for_status()
-        return resp.json()
-    raise RuntimeError(f"Failed after {max_retries} retries: {url}")
-```
-
-```javascript
-async function getWithRetry(url, params = {}, maxRetries = 5) {
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    const qs = new URLSearchParams(params).toString();
-    const resp = await fetch(`${url}?${qs}`);
-    if (resp.status === 429) {
-      const wait = (parseInt(resp.headers.get("Retry-After") ?? "2") * (attempt + 1)) * 1000;
-      await new Promise(r => setTimeout(r, wait));
-      continue;
-    }
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    return resp.json();
-  }
-  throw new Error(`Failed after ${maxRetries} retries: ${url}`);
-}
-```
-
 ---
 
 ## Data Model Overview
@@ -132,21 +97,6 @@ There are three mock facilities. Each has 100 patients.
 ---
 
 ## Endpoints
-
-### Health
-
-#### `GET /health`
-
-Confirms the service is up. Never rate-limited.
-
-```bash
-curl https://hackathon.prod.pulsefoundry.ai/health
-```
-
-**Response `200`:**
-```json
-{"status": "healthy", "service": "hackathon"}
-```
 
 ---
 
@@ -511,97 +461,6 @@ for p in patients:
 | `HMO` | HMO / Managed Care | Bundled payment, typically not separately billable |
 
 Medicare Part B (`MCB`) is the most relevant payer for wound care eligibility — patients with active MCB coverage are the primary target population.
-
----
-
-## End-to-End Walkthrough
-
-This section shows a complete sequence to fetch all data needed for wound care eligibility processing for a single facility.
-
-### Step 1 — Load all patients
-
-```bash
-curl "https://hackathon.prod.pulsefoundry.ai/pcc/patients?facility_id=101"
-```
-
-Store the response. For each patient you now have:
-- `patient_id` (string like `FA-001`) for diagnosis/coverage lookups
-- `id` (integer like `1`) for notes/assessment lookups
-- `primary_payer_code` for a quick pre-filter
-
-### Step 2 — Fetch diagnoses and coverage
-
-For each patient, fetch their diagnoses and insurance coverage in parallel if possible.
-
-```bash
-# Diagnoses
-curl "https://hackathon.prod.pulsefoundry.ai/pcc/diagnoses?patient_id=FA-001"
-
-# Coverage — check for active MCB with effective_to=null
-curl "https://hackathon.prod.pulsefoundry.ai/pcc/coverage?patient_id=FA-001"
-```
-
-### Step 3 — Fetch progress notes and assessments
-
-Using the integer `id` from Step 1:
-
-```bash
-# Progress notes (contains free-text wound narrative)
-curl "https://hackathon.prod.pulsefoundry.ai/pcc/notes?patient_id=1"
-
-# Structured wound assessments
-curl "https://hackathon.prod.pulsefoundry.ai/pcc/assessments?patient_id=1"
-```
-
-### Step 4 — Run your NLP pipeline
-
-For each note:
-1. Parse `note_text` to extract wound type, stage, location, and measurements.
-2. Cross-reference with `raw_json` from the matching assessment if available.
-3. Check coverage for active Medicare Part B (`payer_code = "MCB"`, `effective_to = null`).
-4. Apply eligibility rules and produce a routing decision: `auto_accept`, `flag_for_review`, or `reject`.
-
-### Full Python example
-
-```python
-import httpx
-import time
-
-BASE = "https://hackathon.prod.pulsefoundry.ai"
-
-def get_with_retry(url, params=None, max_retries=5):
-    for attempt in range(max_retries):
-        resp = httpx.get(url, params=params)
-        if resp.status_code == 429:
-            wait = int(resp.headers.get("Retry-After", 2)) * (attempt + 1)
-            time.sleep(wait)
-            continue
-        resp.raise_for_status()
-        return resp.json()
-    raise RuntimeError(f"Failed after {max_retries} retries: {url}")
-
-def fetch_patient_data(facility_id: int) -> list[dict]:
-    patients = get_with_retry(f"{BASE}/pcc/patients", {"facility_id": facility_id})
-    results = []
-
-    for patient in patients:
-        pid_str = patient["patient_id"]  # "FA-001"
-        pid_int = patient["id"]          # 1
-
-        data = {
-            "patient": patient,
-            "diagnoses": get_with_retry(f"{BASE}/pcc/diagnoses", {"patient_id": pid_str}),
-            "coverage": get_with_retry(f"{BASE}/pcc/coverage", {"patient_id": pid_str}),
-            "notes": get_with_retry(f"{BASE}/pcc/notes", {"patient_id": pid_int}),
-            "assessments": get_with_retry(f"{BASE}/pcc/assessments", {"patient_id": pid_int}),
-        }
-        results.append(data)
-
-    return results
-
-all_data = fetch_patient_data(facility_id=101)
-print(f"Loaded data for {len(all_data)} patients")
-```
 
 ---
 

@@ -104,11 +104,13 @@ Produce one row per patient with:
 **4. Presentation**
 Walk us through your output as if presenting to a non-technical biller. What do they see? How do they know what to act on?
 
+**5. Visual output**
+Display your results in a visual format — a dashboard, UI, or interactive table. A biller should be able to see patient routing decisions at a glance without reading raw data.
+
 ### Optional / Bonus
 
 - Use an LLM or agent to assist with extraction or generate a summary narrative per patient
 - Implement incremental sync using the `since` parameter (only fetch records modified since your last run)
-- Surface a simple UI or dashboard over your output table
 
 ---
 
