@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<!--
+============================================================================
+  dashboard.html — Custom Project Status Dashboard
+  WRAPPER: Option A — STANDALONE WEBPAGE (the default delivery surface) · T-004
+============================================================================
+  WHAT THIS FILE IS
+    A freestanding, self-contained HTML page that renders the 5-zone project
+    status dashboard. Opens by double-click (file://) — no server, no build,
+    no external fetches. This is the DEFAULT surface (Option A). The Interlude
+    tool wrapper (Option B) is a separate file (dashboard.tool.html · T-005).
+
+  HOW IT'S BUILT (build contract, T-003 handoff)
+    1. The shared style core (dashboard.base.css) is INLINED into the <style>
+       block below — NOT <link>ed — because file:// and preview sandboxes
+       cannot fetch external CSS. The inlined block is a COPY of the
+       source-of-truth artifacts/status-dashboard/dashboard.base.css; if that
+       file changes, re-inline it here. KEEP IN SYNC.
+    2. Markup contract: .dash > .dash__root > five .dash-zone shells.
+    3. The ONLY thing this wrapper adds on top of the shared core is the
+       wide-page container clamp + page chrome (see the WRAPPER OVERRIDE block
+       at the end of <style>). It references ONLY --dash-* tokens — never a
+       raw host token, never a hardcoded color/size a token already names.
+
+  CONTENT
+    Populated with the REAL worked example from
+    artifacts/status-dashboard/dashboard.data.md (this mission dogfoods its
+    own dashboard). Each value carries an HTML comment naming the
+    dashboard.data.* field it came from, so a RECONCILE re-fill knows what
+    maps where. Values are rendered directly from the YAML — nothing computed.
+
+  REGENERATION
+    At RECONCILE the agency re-derives dashboard.data.md from the state files,
+    then re-renders these zones. The data.* field comments are the map.
+============================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project Status — Custom Project Status Dashboard</title>
+<style>
+/* ==========================================================================
+   INLINED COPY of artifacts/status-dashboard/dashboard.base.css (T-003).
+   Source of truth is that file — this is an inlined VERBATIM duplicate so the
+   page is self-contained for file:// / preview sandboxes. The block below this
+   banner, up to the [END inlined dashboard.base.css] banner, is byte-for-byte
+   the source file. KEEP IN SYNC: re-inline on any base.css change (T-015 §E).
+   ========================================================================== */
+
+/* ============================================================================
+   dashboard.base.css — shared style core for the Custom Project Status Dashboard
+   ----------------------------------------------------------------------------
+   Project-agnostic, TOKEN-DRIVEN base styles for the 5-zone status dashboard.
+   ONE core, inherited by BOTH wrappers:
+     - Option A (standalone webpage)  — wide page, may use page chrome
+     - Option B (Interlude tool)      — contained light card (~640px max)
+   The wrappers override ONLY container width + page chrome; everything visual
+   in here is expressed through the frozen `--dash-*` token contract.
+
+   CONTRACT SOURCE OF TRUTH: artifacts/status-dashboard/TAILORING.md §2 (T-002).
+   31 variables, frozen names. Each is `var(--host-x, <neutral-fallback>)` so it
+   binds to the host design system when present and falls back to a neutral,
+   legible floor otherwise. The fallbacks are a SAFETY NET, not the design — a
+   `/SDLC-design` tailoring run re-binds the right-hand side to real host tokens.
+
+   HARD GATES (host interaction conventions, non-negotiable — design-system.md):
+     - reduced-motion guard: all motion behind prefers-reduced-motion:no-preference
+     - compositor-only motion: animate transform/opacity ONLY
+     - directional easing: ease-out enter, ease-in exit; via the motion vars
+   Resting state is fully usable with zero motion.
+
+   RULE: never reference a raw host token (`--host-*`) or a hardcoded
+   color/size/font that a token already names from anywhere below `:root`.
+   Style only through `--dash-*`.
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------------
+   §1  TOKEN CONTRACT — the 31 frozen `--dash-*` variables.
+   A tailoring run OVERRIDES this :root, re-pointing each var at a host token,
+   e.g.  --dash-accent: var(--host-accent, #3B5BDB);
+   Below, the `var(--host-*, fallback)` indirection is already in place: if the
+   host defines the token it wins; otherwise the neutral fallback holds the line.
+   >>> TAILORING BIND POINT: this whole :root block. <<<
+   ---------------------------------------------------------------------------- */
+:root {
+  /* --- 2a. Color (10) --------------------------------------------------- */
+  --dash-bg:          var(--host-bg,          #FFFFFF);  /* page/canvas bg     */
+  --dash-surface:     var(--host-surface,     #F7F7F5);  /* card/panel bg      */
+  --dash-fg:          var(--host-fg,          #1A1A1A);  /* primary text       */
+  --dash-muted:       var(--host-muted,       #6B7280);  /* secondary text     */
+  --dash-accent:      var(--host-accent,      #3B5BDB);  /* brand/active/fill  */
+  --dash-accent-soft: var(--host-accent-soft, #E7ECFB);  /* accent tint/wash   */
+  --dash-rule:        var(--host-rule,        #E3E3E0);  /* hairline/border    */
+  /* OK / WARN / RISK fallbacks are tuned so the 12px/600 status & risk PILL
+     TEXT (color on its own 12–14%-over-surface tint) clears WCAG 2.2 SC 1.4.3
+     ≥4.5:1 both on white and on the --dash-surface fallback. These are the
+     NEUTRAL FALLBACKS ONLY — a host token (--host-ok/warn/risk) overrides them
+     at tailoring time, so a host may re-introduce its own (host-verified) hues. */
+  --dash-ok:          var(--host-ok,          #2E6B43);  /* done / on-track   — pill text ≥4.5:1 (worst case 5.01:1 on surface tint) */
+  --dash-warn:        var(--host-warn,        #7A4F00);  /* at-risk / progress — pill text ≥4.5:1 (worst case 5.38:1 on surface tint) */
+  --dash-risk:        var(--host-risk,        #B23B3B);  /* blocked / off-track— pill text ≥4.5:1 (worst case 4.58:1 on surface tint) */
+
+  /* --- 2b. Type (8) ----------------------------------------------------- */
+  --dash-font-sans:    var(--host-font-sans,    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif);
+  --dash-font-display: var(--host-font-display, var(--dash-font-sans));
+  --dash-font-mono:    var(--host-font-mono,    ui-monospace, SFMono-Regular, Menlo, monospace);
+  --dash-text-xs:      var(--host-text-xs,      0.75rem);   /* meta / footer    */
+  --dash-text-sm:      var(--host-text-sm,      0.875rem);  /* labels           */
+  --dash-text-base:    var(--host-text-base,    1rem);      /* body             */
+  --dash-text-lg:      var(--host-text-lg,      1.25rem);   /* zone titles      */
+  --dash-text-xl:      var(--host-text-xl,      1.75rem);   /* project title    */
+
+  /* --- 2c. Space / radius / elevation (9) ------------------------------- */
+  --dash-space-1:  var(--host-space-1,  4px);   /* tightest gap              */
+  --dash-space-2:  var(--host-space-2,  8px);   /* inner padding small       */
+  --dash-space-3:  var(--host-space-3,  12px);  /* default element gap       */
+  --dash-space-4:  var(--host-space-4,  16px);  /* zone inner padding        */
+  --dash-space-5:  var(--host-space-5,  24px);  /* gap between zones         */
+  --dash-space-6:  var(--host-space-6,  32px);  /* outer page padding        */
+  --dash-radius:    var(--host-radius,    10px); /* card/panel corner        */
+  --dash-radius-sm: var(--host-radius-sm, 6px);  /* pills / badges / chips   */
+  --dash-elevation: var(--host-elevation, 0 1px 3px rgba(0, 0, 0, 0.08)); /* card shadow */
+
+  /* --- 2d. Motion (4) — inherit host motion tokens, never redefine ------ */
+  --dash-motion-fast: var(--host-motion-fast, 200ms);
+  --dash-motion-slow: var(--host-motion-slow, 400ms);
+  --dash-ease-enter:  var(--host-ease-enter,  cubic-bezier(0, 0, 0, 1));     /* decelerate / enter */
+  --dash-ease-exit:   var(--host-ease-exit,   cubic-bezier(0.3, 0, 1, 1));   /* accelerate / exit  */
+}
+
+/* ----------------------------------------------------------------------------
+   §2  RESET / PRIMITIVES — minimal, token-driven, form-factor-neutral.
+   No fixed widths in the core (responsive + container-friendly); the wrappers
+   own the container clamp.
+   ---------------------------------------------------------------------------- */
+.dash *,
+.dash *::before,
+.dash *::after { box-sizing: border-box; }
+
+.dash {
+  font-family: var(--dash-font-sans);
+  font-size: var(--dash-text-base);
+  line-height: 1.5;
+  color: var(--dash-fg);
+  background: var(--dash-bg);
+  /* container queries so zones can adapt to the wrapper's width, not the page */
+  container-type: inline-size;
+  container-name: dash;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
+.dash h1, .dash h2, .dash h3, .dash p { margin: 0; }
+.dash ul { margin: 0; padding: 0; list-style: none; }
+
+/* The root rail: stacks the 5 zones. No max-width here — wrappers clamp it. */
+.dash__root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dash-space-5);
+  padding: var(--dash-space-6);
+  width: 100%;
+}
+
+/* Shared zone shell — every zone is a surface card on the contract. */
+.dash-zone {
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-rule);
+  border-radius: var(--dash-radius);
+  padding: var(--dash-space-4);
+}
+
+.dash-zone__title {
+  font-family: var(--dash-font-display);
+  font-size: var(--dash-text-lg);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin-bottom: var(--dash-space-3);
+}
+
+.dash-eyebrow {
+  font-family: var(--dash-font-mono);
+  font-size: var(--dash-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--dash-muted);
+}
+
+/* Status pill — shared component used by progress + risks (severity coloring). */
+.dash-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dash-space-1);
+  padding: 2px var(--dash-space-2);
+  border-radius: var(--dash-radius-sm);
+  font-size: var(--dash-text-xs);
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.dash-pill--ok   { color: var(--dash-ok);   background: color-mix(in srgb, var(--dash-ok)   12%, transparent); }
+.dash-pill--warn { color: var(--dash-warn); background: color-mix(in srgb, var(--dash-warn) 14%, transparent); }
+.dash-pill--risk { color: var(--dash-risk); background: color-mix(in srgb, var(--dash-risk) 12%, transparent); }
+.dash-pill--neutral { color: var(--dash-muted); background: color-mix(in srgb, var(--dash-muted) 12%, transparent); }
+
+/* ----------------------------------------------------------------------------
+   §3  ZONE 1 — PROJECT OVERVIEW (goal / scope / stakeholders / timeline)
+   ---------------------------------------------------------------------------- */
+.dash-overview__title {
+  font-family: var(--dash-font-display);
+  font-size: var(--dash-text-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--dash-space-2);
+}
+.dash-overview__goal {
+  font-size: var(--dash-text-base);
+  color: var(--dash-fg);
+  margin-bottom: var(--dash-space-4);
+  max-width: 60ch;
+}
+/* Meta grid: scope / stakeholders / timeline. Auto-fits to container width. */
+.dash-overview__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--dash-space-4);
+}
+.dash-meta__label {
+  font-size: var(--dash-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--dash-muted);
+  margin-bottom: var(--dash-space-1);
+}
+.dash-meta__value { font-size: var(--dash-text-sm); color: var(--dash-fg); }
+
+/* ----------------------------------------------------------------------------
+   §4  ZONE 2 — THE ARC (all phases/milestones, start -> finish)
+   Renders as a horizontal phase sequence with a clear active marker.
+   Wraps gracefully in narrow (Interlude) containers.
+   ---------------------------------------------------------------------------- */
+.dash-arc__track {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--dash-space-2);
+  position: relative;
+}
+/* One phase node along the arc. */
+.dash-arc__phase {
+  flex: 1 1 96px;
+  min-width: 84px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--dash-space-1);
+  padding: var(--dash-space-2) var(--dash-space-2) var(--dash-space-3);
+  border-radius: var(--dash-radius-sm);
+  border: 1px solid var(--dash-rule);
+  background: var(--dash-bg);
+}
+/* The marker dot + connector. The connector is the axis line (rule colored). */
+.dash-arc__marker {
+  display: flex;
+  align-items: center;
+  gap: var(--dash-space-1);
+}
+.dash-arc__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--dash-rule);
+  flex: none;
+}
+.dash-arc__connector {
+  height: 2px;
+  flex: 1 1 auto;
+  background: var(--dash-rule);
+  border-radius: 2px;
+}
+.dash-arc__label {
+  font-size: var(--dash-text-sm);
+  font-weight: 600;
+  color: var(--dash-fg);
+}
+.dash-arc__sub {
+  font-family: var(--dash-font-mono);
+  font-size: var(--dash-text-xs);
+  color: var(--dash-muted);
+}
+/* Phase states along the arc. */
+.dash-arc__phase--done .dash-arc__dot       { background: var(--dash-ok); }
+.dash-arc__phase--done .dash-arc__connector { background: var(--dash-ok); }
+/* DONE phase: make "finished" read at a glance on the LABEL (not just the dot)
+   — ok-toned label + a leading ✓ glyph. The glyph is decorative (aria-hidden in
+   markup); the ok tone still passes on the surface the arc node sits on. */
+.dash-arc__phase--done .dash-arc__label { color: var(--dash-ok); }
+.dash-arc__phase--done .dash-arc__label::before {
+  content: "\2713\00a0";   /* ✓ + nbsp */
+  font-weight: 700;
+}
+.dash-arc__phase--upcoming .dash-arc__label { color: var(--dash-muted); }
+/* Active phase: clearest marker on the arc (accent ring + soft wash). */
+.dash-arc__phase--active {
+  background: var(--dash-accent-soft);
+  border-color: var(--dash-accent);
+  box-shadow: inset 0 0 0 1px var(--dash-accent);
+}
+.dash-arc__phase--active .dash-arc__dot { background: var(--dash-accent); }
+
+/* ----------------------------------------------------------------------------
+   §5  ZONE 3 — YOU-ARE-HERE (active phase + map to whole)
+   The STRONGEST signal on the page: accent wash, accent edge, biggest framing.
+   ---------------------------------------------------------------------------- */
+.dash-here {
+  background: var(--dash-accent-soft);
+  border: 1px solid var(--dash-accent);
+  border-left: 4px solid var(--dash-accent);
+  border-radius: var(--dash-radius);
+  padding: var(--dash-space-4);
+}
+.dash-here__eyebrow {
+  font-family: var(--dash-font-mono);
+  font-size: var(--dash-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--dash-accent);
+  font-weight: 700;
+  margin-bottom: var(--dash-space-1);
+}
+.dash-here__phase {
+  font-family: var(--dash-font-display);
+  font-size: var(--dash-text-lg);
+  font-weight: 700;
+  color: var(--dash-fg);
+  margin-bottom: var(--dash-space-2);
+}
+.dash-here__map {
+  font-size: var(--dash-text-sm);
+  color: var(--dash-muted);
+}
+.dash-here__map strong { color: var(--dash-fg); font-weight: 650; }
+
+/* ----------------------------------------------------------------------------
+   §6  ZONE 4 — PROGRESS DETAIL + RISKS
+   done / in-progress / upcoming groupings + risk severity coloring.
+   ---------------------------------------------------------------------------- */
+.dash-progress__groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--dash-space-4);
+}
+.dash-group__head {
+  display: flex;
+  align-items: center;
+  gap: var(--dash-space-2);
+  margin-bottom: var(--dash-space-2);
+  padding-bottom: var(--dash-space-2);
+  border-bottom: 1px solid var(--dash-rule);
+}
+.dash-group__title {
+  font-size: var(--dash-text-sm);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--dash-muted);
+}
+.dash-group__count {
+  margin-left: auto;
+  font-family: var(--dash-font-mono);
+  font-size: var(--dash-text-xs);
+  color: var(--dash-muted);
+}
+.dash-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--dash-space-2);
+  padding: var(--dash-space-2) 0;
+  font-size: var(--dash-text-sm);
+}
+.dash-item__marker { flex: none; width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--dash-rule); }
+.dash-item--done       .dash-item__marker { background: var(--dash-ok); }
+.dash-item--inprogress .dash-item__marker { background: var(--dash-warn); }
+.dash-item--upcoming   .dash-item__marker { background: var(--dash-muted); }
+.dash-item--done .dash-item__text { color: var(--dash-muted); }
+.dash-item__code { font-family: var(--dash-font-mono); font-size: var(--dash-text-xs); color: var(--dash-muted); }
+
+/* EMPTY-STATE ROW — the data contract guarantees done[]/upcoming[]/risks[]
+   always arrive but may be empty, so a fresh project renders a group header over
+   a void. Render ONE .dash-empty row in place of the list when a group is empty:
+   a calm, muted line (done/upcoming → "Nothing yet.") or, for risks, a positive
+   ok-toned line ("No open blockers — on track"). See the commented exemplars in
+   each wrapper for the exact markup. */
+.dash-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--dash-space-2);
+  padding: var(--dash-space-2) 0;
+  font-size: var(--dash-text-sm);
+  font-style: italic;
+  color: var(--dash-muted);
+}
+.dash-empty::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dash-rule);
+}
+/* Positive empty state (no open risks) — calm, on-track, ok-toned (not muted). */
+.dash-empty--ok { color: var(--dash-ok); font-style: normal; }
+.dash-empty--ok::before { background: var(--dash-ok); }
+
+/* Risks / blockers — severity drives the left rule + pill. */
+.dash-risks { margin-top: var(--dash-space-4); padding-top: var(--dash-space-4); border-top: 1px solid var(--dash-rule); }
+.dash-risk-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--dash-space-3);
+  padding: var(--dash-space-2) var(--dash-space-3);
+  border-left: 3px solid var(--dash-rule);
+  border-radius: var(--dash-radius-sm);
+  background: var(--dash-bg);
+  margin-bottom: var(--dash-space-2);
+}
+.dash-risk-row--ok   { border-left-color: var(--dash-ok); }
+.dash-risk-row--warn { border-left-color: var(--dash-warn); }
+.dash-risk-row--risk { border-left-color: var(--dash-risk); }
+.dash-risk-row__body { font-size: var(--dash-text-sm); color: var(--dash-fg); }
+
+/* ----------------------------------------------------------------------------
+   §7  ZONE 5 — FOOTER (last-updated timestamp + owner)
+   ---------------------------------------------------------------------------- */
+.dash-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--dash-space-3);
+  padding-top: var(--dash-space-3);
+  border-top: 1px solid var(--dash-rule);
+  font-family: var(--dash-font-mono);
+  font-size: var(--dash-text-xs);
+  color: var(--dash-muted);
+}
+.dash-footer__sep { opacity: 0.5; }
+.dash-footer__owner { color: var(--dash-fg); }
+
+/* ----------------------------------------------------------------------------
+   §8  MOTION — entrance only, compositor-only (transform/opacity), behind the
+   reduced-motion guard. Resting state (above) is fully usable with NO motion;
+   nothing here is required for legibility.
+   ---------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .dash-zone,
+  .dash-here {
+    animation: dash-rise var(--dash-motion-slow) var(--dash-ease-enter) both;
+  }
+  /* gentle stagger across the 5 zones */
+  .dash-zone:nth-of-type(1) { animation-delay: 0ms; }
+  .dash-zone:nth-of-type(2) { animation-delay: 40ms; }
+  .dash-zone:nth-of-type(3) { animation-delay: 80ms; }
+  .dash-zone:nth-of-type(4) { animation-delay: 120ms; }
+  .dash-zone:nth-of-type(5) { animation-delay: 160ms; }
+
+  /* active arc marker: subtle attention pulse, opacity-only (compositor-safe) */
+  .dash-arc__phase--active .dash-arc__dot {
+    animation: dash-pulse calc(var(--dash-motion-slow) * 3) var(--dash-ease-enter) infinite alternate;
+  }
+}
+
+@keyframes dash-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dash-pulse {
+  from { opacity: 0.55; }
+  to   { opacity: 1; }
+}
+
+/* ----------------------------------------------------------------------------
+   §9  CONTAINER ADAPTATION — core responds to the WRAPPER's width, not the page.
+   Wrappers set the container width; the core reflows. In a narrow (Interlude)
+   container the arc stacks, the overview meta + progress groups collapse to one
+   column. NO fixed widths live here — only flow rules keyed to the container.
+   ---------------------------------------------------------------------------- */
+@container dash (max-width: 460px) {
+  .dash__root { padding: var(--dash-space-4); gap: var(--dash-space-4); }
+  .dash-overview__meta,
+  .dash-progress__groups { grid-template-columns: 1fr; }
+  .dash-arc__track { flex-direction: column; }
+  .dash-arc__phase { flex: 1 1 auto; }
+  .dash-arc__connector { display: none; } /* vertical stack: drop horizontal axis line */
+}
+
+/* ==========================================================================
+   END inlined dashboard.base.css.
+   ----------------------------------------------------------------------------
+   WRAPPER OVERRIDE — Option A (standalone webpage) ONLY.
+   This is the ONLY thing this wrapper adds on top of the shared core: a wide,
+   centered page + page chrome. Uses ONLY --dash-* tokens (no raw host token,
+   no hardcoded color/size a token names).
+   ========================================================================== */
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--dash-bg);
+  min-height: 100vh;
+}
+/* Wide-page clamp: center the dashboard in a comfortable reading column. */
+.dash {
+  max-width: 1040px;   /* Option-A wide page (~960–1100px band) */
+  margin: 0 auto;
+}
+</style>
+</head>
+<body>
+
+<!-- .dash > .dash__root: the markup contract from T-003. Five .dash-zone shells follow. -->
+<div class="dash">
+  <div class="dash__root">
+
+    <!-- =====================================================================
+         ZONE 1 — PROJECT OVERVIEW   (source: dashboard.data.zone1_overview)
+         ===================================================================== -->
+    <section class="dash-zone dash-overview" aria-labelledby="z1-title">
+      <p class="dash-eyebrow">Project overview</p>
+      <!-- data: zone1_overview (project name; from mission/title) -->
+      <h1 class="dash-overview__title" id="z1-title">Custom Project Status Dashboard</h1>
+      <!-- data: zone1_overview.goal -->
+      <p class="dash-overview__goal">
+        Build the Custom Project Status Dashboard — a standing, CEO-facing
+        project-status deliverable that every agency in the engine creates at
+        kickoff and updates continuously, as a reusable template across three
+        surfaces with a shared format-agnostic core.
+      </p>
+
+      <div class="dash-overview__meta">
+        <!-- data: zone1_overview.scope.in[] + scope.out[] -->
+        <div>
+          <p class="dash-meta__label">Scope</p>
+          <div class="dash-meta__value">
+            <p><strong>In:</strong></p>
+            <ul>
+              <li>P1 — Dashboard artifact: shared content source + standalone wrapper + Interlude wrapper, 5 zones, auto-populated from state files.</li>
+              <li>P2 — Engine gate: state/reporting.md (location/format/cadence/owner); INTAKE gate + RECONCILE regenerate rule wired into commands.</li>
+              <li>P3 — Onboarding: Advanced Step C.5 in SKILL.md; seeds reporting.md; how-to-choose-format / how-to-update note.</li>
+            </ul>
+            <p style="margin-top: var(--dash-space-2);"><strong>Out:</strong></p>
+            <ul>
+              <li>No deploys, no pushes, no git-history changes.</li>
+              <li>No production code; build + review only, stop at reviewable state.</li>
+              <li>No hosted-link / server delivery (local file is default; hosting is a future expansion).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- data: zone1_overview.stakeholders[] -->
+        <div>
+          <p class="dash-meta__label">Stakeholders</p>
+          <div class="dash-meta__value">
+            <ul>
+              <li><strong>Sponsor / audience:</strong> CEO (orchestrator / main session)</li>
+              <li><strong>Owner:</strong> orchestrator</li>
+              <li><strong>Delivery divisions:</strong> Design Agency, Build (frontend/docs), Knowledge, Quality</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- data: zone1_overview.timeline (start / target / status_label) -->
+        <div>
+          <p class="dash-meta__label">Timeline</p>
+          <div class="dash-meta__value">
+            <ul>
+              <li><strong>Start:</strong> 2026-06-08</li>
+              <li><strong>Target:</strong> TBD (single-run build; gated at T-014 RECONCILE)</li>
+              <li><strong>Status:</strong> <span class="dash-pill dash-pill--warn">In progress</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ZONE 2 — THE ARC   (source: dashboard.data.zone2_arc)
+         All phases start -> finish, ordered, with a clear active marker.
+         Phase status drives the modifier class: done / active / upcoming.
+         ===================================================================== -->
+    <section class="dash-zone dash-arc" aria-labelledby="z2-title">
+      <h2 class="dash-zone__title" id="z2-title">The Arc</h2>
+      <!-- data: zone2_arc.items[] — status==in_progress for the active phase renders --active -->
+      <ul class="dash-arc__track">
+
+        <!-- data: zone2_arc.items[0] (P1, status: in_progress => active) -->
+        <li class="dash-arc__phase dash-arc__phase--active" aria-current="step">
+          <span class="dash-arc__marker"><span class="dash-arc__dot"></span><span class="dash-arc__connector"></span></span>
+          <span class="dash-arc__sub">P1</span>
+          <span class="dash-arc__label">Dashboard artifact</span>
+          <span class="dash-arc__sub">Format-agnostic content source + two wrappers rendering the 5 zones.</span>
+        </li>
+
+        <!-- data: zone2_arc.items[1] (P2, status: upcoming) -->
+        <li class="dash-arc__phase dash-arc__phase--upcoming">
+          <span class="dash-arc__marker"><span class="dash-arc__dot"></span><span class="dash-arc__connector"></span></span>
+          <span class="dash-arc__sub">P2</span>
+          <span class="dash-arc__label">Engine gate</span>
+          <span class="dash-arc__sub">reporting.md + INTAKE gate + RECONCILE regenerate rule.</span>
+        </li>
+
+        <!-- data: zone2_arc.items[2] (P3, status: upcoming) -->
+        <li class="dash-arc__phase dash-arc__phase--upcoming">
+          <span class="dash-arc__marker"><span class="dash-arc__dot"></span><span class="dash-arc__connector"></span></span>
+          <span class="dash-arc__sub">P3</span>
+          <span class="dash-arc__label">Onboarding</span>
+          <span class="dash-arc__sub">Advanced Step C.5 in SKILL.md; seeds reporting.md.</span>
+        </li>
+
+        <!-- data: zone2_arc.items[3] (Q, status: upcoming) -->
+        <li class="dash-arc__phase dash-arc__phase--upcoming">
+          <span class="dash-arc__marker"><span class="dash-arc__dot"></span><span class="dash-arc__connector"></span></span>
+          <span class="dash-arc__sub">Q</span>
+          <span class="dash-arc__label">Quality review</span>
+          <span class="dash-arc__sub">Architecture coherence, UX + design-system reuse, docs clarity.</span>
+        </li>
+
+        <!-- data: zone2_arc.items[4] (M, status: upcoming) -->
+        <li class="dash-arc__phase dash-arc__phase--upcoming">
+          <span class="dash-arc__marker"><span class="dash-arc__dot"></span></span>
+          <span class="dash-arc__sub">M</span>
+          <span class="dash-arc__label">Reconcile + gate</span>
+          <span class="dash-arc__sub">Board/graph reconciled; decisions/risks recorded; DoD evaluated.</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- =====================================================================
+         ZONE 3 — YOU-ARE-HERE   (source: dashboard.data.zone3_you_are_here)
+         The DOMINANT signal: accent wash + accent edge. Values rendered
+         directly (position_label, arc_percent already carried — not computed).
+         ===================================================================== -->
+    <section class="dash-zone dash-here" aria-labelledby="z3-title">
+      <!-- data: zone3_you_are_here.position_label + arc_percent -->
+      <p class="dash-here__eyebrow">You are here · Phase 1 of 5 · 20% of the arc</p>
+      <!-- data: zone3_you_are_here.active_phase_name -->
+      <h2 class="dash-here__phase" id="z3-title">Dashboard artifact</h2>
+      <div class="dash-here__map">
+        <!-- data: zone3_you_are_here.delivers -->
+        <p>
+          <strong>Delivers:</strong> The data schema (the content source) and the
+          two wrappers that render it — the core contract every other phase
+          builds on.
+        </p>
+        <!-- data: zone3_you_are_here.why_it_matters -->
+        <p style="margin-top: var(--dash-space-2);">
+          <strong>Why it matters:</strong> Both wrappers and the reporting config
+          read this format-agnostic source; getting the field structure right
+          here is what lets format switch without rewriting content, and lets
+          the dashboard auto-populate from state.
+        </p>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ZONE 4 — PROGRESS DETAIL + RISKS  (source: dashboard.data.zone4_progress)
+         done / in-progress / upcoming groups + risk severity rows.
+         ===================================================================== -->
+    <section class="dash-zone dash-progress" aria-labelledby="z4-title">
+      <h2 class="dash-zone__title" id="z4-title">Progress detail</h2>
+
+      <div class="dash-progress__groups">
+        <!-- data: zone4_progress.done[] -->
+        <div class="dash-group">
+          <div class="dash-group__head">
+            <span class="dash-group__title">Done</span>
+            <span class="dash-group__count">1</span>
+          </div>
+          <ul>
+            <li class="dash-item dash-item--done">
+              <span class="dash-item__marker"></span>
+              <span class="dash-item__text">
+                Mission planned; task graph + board seeded.
+                <span class="dash-item__code">T-PLAN-001 · chief-of-staff</span>
+              </span>
+            </li>
+            <!-- empty-state pattern: render this row when zone4_progress.done[] is empty
+            <li class="dash-empty">Nothing yet.</li>
+            -->
+          </ul>
+        </div>
+
+        <!-- data: zone4_progress.in_progress[] -->
+        <div class="dash-group">
+          <div class="dash-group__head">
+            <span class="dash-group__title">In progress</span>
+            <span class="dash-group__count">2</span>
+          </div>
+          <ul>
+            <li class="dash-item dash-item--inprogress">
+              <span class="dash-item__marker"></span>
+              <span class="dash-item__text">
+                Data schema — author dashboard.data.md + state-mapping.
+                <span class="dash-item__code">T-001 · knowledge-graph-engineer</span>
+              </span>
+            </li>
+            <li class="dash-item dash-item--inprogress">
+              <span class="dash-item__marker"></span>
+              <span class="dash-item__text">
+                Design tailoring process + token contract.
+                <span class="dash-item__code">T-002 · design-system-specialist</span>
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- data: zone4_progress.upcoming[] -->
+        <div class="dash-group">
+          <div class="dash-group__head">
+            <span class="dash-group__title">Upcoming</span>
+            <span class="dash-group__count">4</span>
+          </div>
+          <ul>
+            <li class="dash-item dash-item--upcoming">
+              <span class="dash-item__marker"></span>
+              <span class="dash-item__text">
+                Token-driven HTML scaffold + shared base styles.
+                <span class="dash-item__code">T-003 · design-systems-engineer</span>
+              </span>
+            </li>
+            <li class="dash-item dash-item--upcoming">
+              <span class="dash-item__marker"></span>
+              <span class="dash-item__text">
+                Standalone wrapper (Option A / default).
+                <span class="dash-item__code">T-004 · frontend-engineer</span>
+              </span>
+            </li>
+            <li class="dash-item dash-item--upcoming">
+              <span class="dash-item__marker"></span>
+              <span class="dash-item__text">
+                Interlude wrapper (Option B).
+                <span class="dash-item__code">T-005 · frontend-engineer</span>
+              </span>
+            </li>
+            <li class="dash-item dash-item--upcoming">
+              <span class="dash-item__marker"></span>
+              <span class="dash-item__text">
+                reporting.md schema (location/format/cadence/owner).
+                <span class="dash-item__code">T-006 · knowledge-graph-engineer</span>
+              </span>
+            </li>
+            <!-- empty-state pattern: render this row when zone4_progress.upcoming[] is empty
+            <li class="dash-empty">Nothing yet.</li>
+            -->
+          </ul>
+        </div>
+      </div>
+
+      <!-- data: zone4_progress.risks[] — severity drives row + pill modifier.
+           The data contract guarantees risks[] always arrives but may be EMPTY;
+           when it is, render the positive empty row below INSTEAD of any rows and
+           set the count to "0 open" (see the empty-state exemplar). -->
+      <div class="dash-risks">
+        <div class="dash-group__head">
+          <span class="dash-group__title">Risks &amp; blockers</span>
+          <span class="dash-group__count">2 open</span>
+        </div>
+
+        <!-- empty-state pattern: when zone4_progress.risks[] is empty, the group head
+             count is "0 open" and this single positive (ok-toned) row replaces the rows
+             below — never leave the "Risks & blockers" header standing over a void:
+        <div class="dash-empty dash-empty--ok">No open blockers — on track.</div>
+        -->
+
+        <!-- data: zone4_progress.risks[0] (R-DRIFT, Medium => warn) -->
+        <div class="dash-risk-row dash-risk-row--warn">
+          <span class="dash-pill dash-pill--warn">Medium</span>
+          <div class="dash-risk-row__body">
+            <strong>R-DRIFT</strong> — Drift between kit template (sdlc-cli/agency-template/) and live .agency/ mirror.
+            <span class="dash-item__code">open · chief-of-staff</span>
+          </div>
+        </div>
+
+        <!-- data: zone4_progress.risks[1] (R-WRITER, Medium => warn) -->
+        <div class="dash-risk-row dash-risk-row--warn">
+          <span class="dash-pill dash-pill--warn">Medium</span>
+          <div class="dash-risk-row__body">
+            <strong>R-WRITER</strong> — Single-writer rule could break if two agents touch a shared file in one batch.
+            <span class="dash-item__code">open · orchestrator</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =====================================================================
+         ZONE 5 — FOOTER   (source: dashboard.data.zone5_footer)
+         ===================================================================== -->
+    <footer class="dash-zone dash-footer" aria-label="Dashboard metadata">
+      <!-- data: zone5_footer.last_updated -->
+      <span>Last updated <time datetime="2026-06-08T14:20:00Z">2026-06-08 14:20 UTC</time></span>
+      <span class="dash-footer__sep">·</span>
+      <!-- data: zone5_footer.owner -->
+      <span>Owner <span class="dash-footer__owner">orchestrator</span></span>
+      <span class="dash-footer__sep">·</span>
+      <!-- data: zone5_footer.generated_by -->
+      <span>agency RECONCILE (regenerated mechanically)</span>
+      <span class="dash-footer__sep">·</span>
+      <!-- data: zone5_footer.source_files[] -->
+      <span>from mission.md · task-graph.md · status-board.md · risk-register.md</span>
+    </footer>
+
+  </div>
+</div>
+
+</body>
+</html>
